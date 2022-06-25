@@ -64,13 +64,14 @@ Dockerコンテナを実行するには、以下の情報が必要です:
 それでは、実行します:
 
 ```bash
-podman run -it -e SPIGOT_VERSION=1.18.1 -v /storage0/data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
+sudo podman run -it -e SPIGOT_VERSION=1.18.1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
 ```
 
 * `-it`をつけると、コンソール操作が行えます。
 * `-e SPIGOT_VERSION=<version>`は、spigotのバージョンを指定します。
 * `-v <data directory>:/spigot-data`は、データディレクトリの位置を指定します。後半の`:/spigot-data`は固定です。この通りに指定してください。
 * `-p <port>:25565`は、公開するポート番号です。これも、後半の`:25565`は固定です。この通りに指定してください。
+* `-e SPIGOT_OPTIONS=<options>`は、javaのコマンドラインオプションです。`-Xms2048M`は、メモリを最低2GB割り当てます。
 
 初回の実行には、以下のポイントがあります:
 
@@ -89,7 +90,7 @@ podman run -it -e SPIGOT_VERSION=1.18.1 -v /storage0/data:/spigot-data -p 25565:
 ここまで来れば、あとは先ほどと同じようにコンテナを実行するだけです:
 
 ```bash
-podman run -e SPIGOT_VERSION=1.18.1 -v /storage0/spigot-data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
+sudo podman run -d -e SPIGOT_VERSION=1.18.1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/spigot-data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
 ```
 
 spigotが生成されていれば、2回目以降はspigotのビルドが行われず、直接spigotが起動します。

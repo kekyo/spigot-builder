@@ -23,5 +23,5 @@ if [ ! -d ./run ]; then
 fi
 
 cd run
-java -Xms2048M -Xmx8192M -jar ../spigot-${SPIGOT_VERSION}.jar nogui
+java ${SPIGOT_OPTIONS} -jar ../spigot-${SPIGOT_VERSION}.jar nogui
 

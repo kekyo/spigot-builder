@@ -64,13 +64,14 @@ To run the Docker container, you will need the following information:
 Now, run :
 
 ```bash
-podman run -it -e SPIGOT_VERSION=1.18.1 -v /storage0/data:/spigot-data -p 25565:25565 kekyo/spigot_runner
+sudo podman run -it -e SPIGOT_VERSION=1.18.1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
 ```
 
 * With `-it`, you can perform console operations.
 * `-e SPIGOT_VERSION=<version>` specifies the version of spigot.
 * `-v <data directory>:/spigot-data` specifies the location of the data directory. The latter `:/spigot-data` is fixed. Specify as follows.
 * `-p <port>:25565` is the port number to be published. The latter half of `:25565` is also fixed. Please specify as shown.
+* `-e SPIGOT_OPTIONS=<options>` is a command line option for java. `-Xms2048M` allocates at least 2GB of memory.
 
 For the first run, there are the following points :
 
@@ -89,7 +90,7 @@ You are now all set.
 Now all you have to do is to run the container as you did before:
 
 ```bash
-podman run -e SPIGOT_VERSION=1.18.1 -v /storage0/spigot-data:/spigot-data -p 25565:25565 kekyo/spigot_runner
+sudo podman run -d -e SPIGOT_VERSION=1.18.1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/spigot-data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
 ```
 
 If spigot is generated, spigot will not be built after the second time and spigot will be started directly.
