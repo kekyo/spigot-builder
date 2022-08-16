@@ -64,9 +64,10 @@ Dockerコンテナを実行するには、以下の情報が必要です:
 それでは、実行します:
 
 ```bash
-sudo podman run -it -e SPIGOT_VERSION=1.18.1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
+sudo podman run --name minecraft -it -e SPIGOT_VERSION=1.18.1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
 ```
 
+* `--name`は、Dockerコンテナに付ける名前です。省略すると、適当な（割と奇妙な）名前が自動的に付与されます。
 * `-it`をつけると、コンソール操作が行えます。
 * `-e SPIGOT_VERSION=<version>`は、spigotのバージョンを指定します。
 * `-v <data directory>:/spigot-data`は、データディレクトリの位置を指定します。後半の`:/spigot-data`は固定です。この通りに指定してください。
@@ -90,10 +91,24 @@ sudo podman run -it -e SPIGOT_VERSION=1.18.1 -e SPIGOT_OPTIONS=-Xms2048M -v /sto
 ここまで来れば、あとは先ほどと同じようにコンテナを実行するだけです:
 
 ```bash
-sudo podman run -d -e SPIGOT_VERSION=1.18.1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/spigot-data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
+sudo podman run --name minecraft -d -e SPIGOT_VERSION=1.18.1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/spigot-data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
 ```
 
+* `-it`の代わりに`-d`を指定しています。これはバックグラウンドで動作させ、コンソール操作は行わないという意味です。連続動作させる場合は、このオプションを指定します。
+
 spigotが生成されていれば、2回目以降はspigotのビルドが行われず、直接spigotが起動します。
+
+これはpodman特有の話ですが、spigotのイメージをシステムの起動時に自動的に起動する（つまり、systemdを用いて完全に自動化する）には、以下のようなコマンドを実行します:
+
+```bash
+cd /etc/systemd/system
+podman generate systemd --name --restart-policy on-failure -f minecraft
+systemctl daemon-reload
+
+systemctl enable container-minecraft
+```
+
+これと同じことを、podmanではなくDockerで行うには、Dockerコンテナの自動起動についてのトピックを検索して下さい。（おそらく、環境によって方法が異なります）
 
 ----
 
@@ -113,12 +128,41 @@ TODO:
 ## バックアップやバージョンアップの事
 
 spigotのプログラムに関する部分は、完全にDockerイメージとコンテナの内部に封じてあります。
-普段、spigotのバックアップを行いたい場合は、上記で作ったデータディレクトリ配下をすべてバックアップすればOKです。
-（バックアップする場合は、コンテナを一旦停止させてください）
+普段、ゲームデータのバックアップを行いたい場合は、上記で作ったデータディレクトリ配下をすべてバックアップすればOKです。（バックアップする場合は、コンテナを一旦停止させてください）
 
-バージョンアップさせたい場合は（もちろん、事前にデータディレクトリをバックアップして下さい）、
+spigotのバージョンアップさせたい場合は（もちろん、事前にデータディレクトリをバックアップして下さい）、
 `SPIGOT_VERSION`にそのバージョン番号を指定して起動するだけです。
 指定されたバージョンのspigotがまだ生成されていなければ、自動的に生成を行います。
+
+ともかく、うまくいく方法の例が知りたい、という事であれば、以下のようなスクリプトを用意しておいて、バージョンアップの時に使用すれば、古いバージョンのコンテナイメージの削除、spigotの新しいバージョンをビルド、そして再度systemdへの登録まで自動的にやってくれます。
+
+`upgrade.sh`:
+
+```bash
+#!/bin/sh
+
+systemctl stop container-minecraft
+systemctl disable container-minecraft
+
+podman rm minecraft
+
+podman run --name minecraft -d -e SPIGOT_VERSION=$1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/spigot-data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
+
+cd /etc/systemd/system
+podman generate systemd --name --restart-policy on-failure -f minecraft
+systemctl daemon-reload
+
+systemctl enable container-minecraft
+```
+
+使い方:
+
+```bash
+$ chmod 755 upgrade.sh
+$ sudo upgrade.sh 1.19.2 
+```
+
+このスクリプトを元にして、カスタマイズすれば良いでしょう。
 
 ----
 
