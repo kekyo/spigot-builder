@@ -2,7 +2,9 @@
 
 [docker.io kekyo/spigot_runner](https://hub.docker.com/repository/docker/kekyo/spigot_runner)
 
-[For japanese](README_ja.md)
+----
+
+[![For japanese](images/Japanese.256.png)](README_ja.md)
 
 This is a script to set up a fully automatic spigot server using podman (docker).
 
@@ -125,10 +127,24 @@ Specify port number, data directory path, and spigot version as follows:
 
 ----
 
-### Backups and version upgrades.
+## Backing up game data
 
 The parts related to the spigot program are completely sealed inside the Docker image and container.
-If you usually want to backup your game data, you can do so by backing up everything under the data directory created above. (When backing up, please stop the container once.)
+Normally, if you want to back up game data, simply back up everything under the data directory created above.
+
+When backing up, please stop the container once. Do the following (if you are automating with systemd):
+
+```bash
+$ sudo systemctl stop container-minecraft
+```
+
+You backed up game data directory, restart the container:
+
+```bash
+$ sudo systemctl start container-minecraft
+```
+
+## Spigot upgrade thing
 
 If you want to upgrade the spigot version (of course, backup the data directory beforehand), simply specify the version number in the `SPIGOT_VERSION` field and start it up.
 If the specified version of spigot has not yet been generated, it will automatically do so.
