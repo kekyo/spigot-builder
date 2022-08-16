@@ -67,6 +67,7 @@ Now, run :
 sudo podman run -it -e SPIGOT_VERSION=1.18.1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
 ```
 
+* `--name` is the name you give to the Docker container. If omitted, a suitable (and rather strange) name is automatically given.
 * With `-it`, you can perform console operations.
 * `-e SPIGOT_VERSION=<version>` specifies the version of spigot.
 * `-v <data directory>:/spigot-data` specifies the location of the data directory. The latter `:/spigot-data` is fixed. Specify as follows.
@@ -93,7 +94,21 @@ Now all you have to do is to run the container as you did before:
 sudo podman run -d -e SPIGOT_VERSION=1.18.1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/spigot-data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
 ```
 
+* `-d` is specified instead of `-it`. This means that it will run in the background, and no console operation will be performed. For continuous operation, specify this option.
+
 If spigot is generated, spigot will not be built after the second time and spigot will be started directly.
+
+This is podman-specific, but to automatically start the spigot image at system boot time (i.e., fully automated with systemd), run the following command:
+
+```bash
+cd /etc/systemd/system
+podman generate systemd --name --restart-policy on-failure -f minecraft
+systemctl daemon-reload
+
+systemctl enable container-minecraft
+```
+
+To do this same thing with Docker instead of podman, search with google for the topic about auto-starting Docker containers. (Probably, the method will vary depending on the environment)
 
 ----
 
@@ -112,12 +127,41 @@ Specify port number, data directory path, and spigot version as follows:
 
 ### Backups and version upgrades.
 
-The program-related parts of spigot are completely sealed inside the Docker image and container.
-Normally, if you want to backup spigot, just backup everything under the data directory created above.
-(When backing up, please stop the container once.)
+The parts related to the spigot program are completely sealed inside the Docker image and container.
+If you usually want to backup your game data, you can do so by backing up everything under the data directory created above. (When backing up, please stop the container once.)
 
-If you want to upgrade the version (of course, backup the data directory beforehand), simply specify the version number in the `SPIGOT_VERSION` field and start it up.
+If you want to upgrade the spigot version (of course, backup the data directory beforehand), simply specify the version number in the `SPIGOT_VERSION` field and start it up.
 If the specified version of spigot has not yet been generated, it will automatically do so.
+
+Anyway, if you want to know an example of how to make it work, you can prepare the following script and use it at the time of version upgrade to automatically delete the old version of the container image, build the new version of spigot, and register it with systemd again. It will do it automatically.
+
+``upgrade.sh`:
+
+```bash
+#! /bin/sh
+
+systemctl stop container-minecraft
+systemctl disable container-minecraft
+
+podman rm minecraft
+
+podman run --name minecraft -d -e SPIGOT_VERSION=$1 -e SPIGOT_OPTIONS=-Xms2048M -v /storage0/spigot-data:/spigot-data -p 25565:25565 docker.io/kekyo/spigot_runner
+
+cd /etc/systemd/system
+podman generate systemd --name --restart-policy on-failure -f minecraft
+systemctl daemon-reload
+
+systemctl enable container-minecraft
+```
+
+Usage:
+
+```bash
+$ chmod 755 upgrade.sh
+$ sudo upgrade.sh 1.19.2 
+```
+
+You can customize it based on this script.
 
 ----
 
